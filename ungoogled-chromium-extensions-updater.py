@@ -1,9 +1,7 @@
 import json
 import os
 import posixpath
-import shutil
 import subprocess
-import tempfile
 import requests
 
 from xdg.BaseDirectory import xdg_config_home
