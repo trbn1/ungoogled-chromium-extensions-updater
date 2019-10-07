@@ -4,17 +4,33 @@ import posixpath
 import subprocess
 import requests
 
-from xdg.BaseDirectory import xdg_config_home
+from sys import platform 
 
 ### ### ### ### ### ###
-DOWNLOADER = '/usr/bin/wget'
-BROWSER = '/usr/bin/chromium'
-DL_LOCATION = '/tmp'
-CONFIG_DIR = xdg_config_home
-EXTENSIONS_PATH = CONFIG_DIR + '/chromium/Default/Extensions'
-LOCAL_STATE_PATH = CONFIG_DIR + '/chromium/Local State'
-MANIFEST_PATH_TEMPLATE = CONFIG_DIR + '/chromium/Default/Extensions/{id}/{version}/manifest.json'
-LOCALE_PATH_TEMPLATE = CONFIG_DIR + '/chromium/Default/Extensions/{id}/{version}/_locales/{locale}/messages.json'
+# Linux OS
+if platform.startswith('linux'):
+    DOWNLOADER = '/usr/bin/wget'
+    BROWSER = '/usr/bin/chromium'
+    DL_LOCATION = '/tmp'
+    PROFILE_DIR = os.getenv("HOME") + '/.config/chromium'
+
+# Windows OS
+elif platform.startswith('win32'):
+    DOWNLOADER = 'wget'
+    APPDATA = os.getenv('LOCALAPPDATA')
+    BROWSER = APPDATA + '/Chromium/bin/chrome.exe'
+    DL_LOCATION = APPDATA + '/Temp'
+    PROFILE_DIR = APPDATA + '/Chromium/profile'
+    FLAGS = ['--user-data-dir=' + PROFILE_DIR, '--no-default-browser-check', '--allow-outdated-plugins', '--disable-logging', '--disable-breakpad']
+
+else:
+    print('Unsupported OS.')
+    exit(1)
+
+EXTENSIONS_PATH = PROFILE_DIR + '/Default/Extensions'
+LOCAL_STATE_PATH = PROFILE_DIR + '/Local State'
+MANIFEST_PATH_TEMPLATE = PROFILE_DIR + '/Default/Extensions/{id}/{version}/manifest.json'
+LOCALE_PATH_TEMPLATE = PROFILE_DIR + '/Default/Extensions/{id}/{version}/_locales/{locale}/messages.json'
 ### ### ### ### ### ###
 
 # https://ungoogled-software.github.io/ungoogled-chromium-wiki/faq#can-i-install-extensions-from-the-chrome-webstore
@@ -67,8 +83,11 @@ def install_update(name):
     executable = BROWSER
     crx_path = DL_LOCATION + '/' + name
     args = [executable, crx_path]
-    
-    subprocess.run(args, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    if FLAGS:
+        for flag in FLAGS:
+            args.append(flag)
+        
+    subprocess.Popen(args, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
 
 
 def load_manifest(extension_id, version):
